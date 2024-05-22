@@ -7,6 +7,27 @@ headers = {
     'Referer': 'https://pokedex.org/js/worker.js',
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
 }
+"""
+Chua cao vi qua luoi
+
+curl 'https://pokedex.org/assets/descriptions-1.txt' \
+  -H 'Referer: https://pokedex.org/js/worker.js' \
+  -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+  
+  curl 'https://pokedex.org/assets/types.txt' \
+  -H 'Referer: https://pokedex.org/js/worker.js' \
+  -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+  
+ curl 'https://pokedex.org/assets/evolutions.txt' \
+  -H 'Referer: https://pokedex.org/js/worker.js' \
+  -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36' 
+  
+  
+  curl 'https://pokedex.org/assets/moves-1.txt' \
+  -H 'Referer: https://pokedex.org/js/worker.js' \
+  -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+  
+"""
 
 skim_urls = "https://pokedex.org/assets/skim-monsters-%s.txt"
 description_urls = "https://pokedex.org/assets/descriptions-%s.txt"
