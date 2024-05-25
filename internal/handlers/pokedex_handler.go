@@ -7,10 +7,10 @@ import (
 )
 
 type PokeDexHandler struct {
-	PokedexReposiotry repositories.Pokedex
+	PokedexReposiotry *repositories.PokedexRepository
 }
 
-func NewPokeDexHandler(pokedexReposiotry repositories.Pokedex) *PokeDexHandler {
+func NewPokeDexHandler(pokedexReposiotry *repositories.PokedexRepository) *PokeDexHandler {
 	return &PokeDexHandler{
 		PokedexReposiotry: pokedexReposiotry,
 	}
