@@ -3,6 +3,7 @@ package monster_moves
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mdhuy17/project_netcentric_g5/internal/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,24 +11,13 @@ import (
 	"strings"
 )
 
-// Move represents a Pokémon move.
-type Data struct {
-	Move []struct {
-		LearnType string `json:"learn_type"`
-		Level     int    `json:"level"`
-		Id        int    `json:"id"`
-	} `json:"moves"`
-	ID  string `json:"_id"`
-	Rev string `json:"_rev"`
-}
-
 // InputData represents the structure of the input text file.
 type InputData struct {
-	Docs []Data `json:"docs"`
-	Seq  int    `json:"seq"`
+	Docs []models.MonsterMove `json:"docs"`
+	Seq  int                  `json:"seq"`
 }
 
-func main() {
+func crawl() {
 	// URL to fetch the data from
 	for i := 1; i <= 3; i++ {
 		url := fmt.Sprintf("https://pokedex.org/assets/monster-moves-%d.txt", i)

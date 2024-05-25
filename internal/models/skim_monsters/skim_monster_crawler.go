@@ -3,6 +3,7 @@ package skim_monsters
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mdhuy17/project_netcentric_g5/internal/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,41 +11,13 @@ import (
 	"strings"
 )
 
-// Move represents a Pokémon move.
-type ListMapObject struct {
-	Name        string `json:"name"`
-	ResourceURI string `json:"resource_uri"`
-}
-
-type Data struct {
-	Description []ListMapObject `json:"descriptions"`
-	Type        []ListMapObject `json:"types"`
-	Abilities   []ListMapObject `json:"abilities"`
-	/*
-		"attack":49,"defense":49,"speed":45,"sp_atk":65,"sp_def":65,"hp":45,"weight":"69","height":"7","national_id":1,"name":"Bulbasaur","male_female_ratio":"87.5/12.5","abilities":[{"name":"chlorophyll","resource_uri":"/api/v1/ability/34/"
-	*/
-	Attack          int    `json:"attack"`
-	Defense         int    `json:"defense"`
-	Speed           int    `json:"speed"`
-	SpAtk           int    `json:"sp_atk"`
-	SpDef           int    `json:"sp_def"`
-	HP              int    `json:"hp"`
-	Weight          string `json:"weight"`
-	Height          string `json:"height"`
-	NationalID      int    `json:"national_id"`
-	MaleFemaleRatio string `json:"male_female_ratio"`
-	CatchRate       int    `json:"catch_rate"`
-	ID              string `json:"_id"`
-	Name            string `json:"name"`
-}
-
 // InputData represents the structure of the input text file.
 type InputData struct {
-	Docs []Data `json:"docs"`
-	Seq  int    `json:"seq"`
+	Docs []models.SkimMonster `json:"docs"`
+	Seq  int                  `json:"seq"`
 }
 
-func (i *InputData) crawl() {
+func crawl() {
 	// URL to fetch the data from
 	for i := 1; i <= 3; i++ {
 		url := fmt.Sprintf("https://pokedex.org/assets/skim-monsters-%d.txt", i)

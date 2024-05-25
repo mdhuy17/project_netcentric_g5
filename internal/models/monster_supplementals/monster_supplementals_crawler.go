@@ -3,6 +3,7 @@ package monster_supplementals
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mdhuy17/project_netcentric_g5/internal/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,36 +11,13 @@ import (
 	"strings"
 )
 
-// Move represents a Pokémon move.
-type Data struct {
-	/*
-		{"specialAttackEV":0,"hpEV":0,"hatchSteps":5100,"defenseEV":0,"attackEV":2,"specialDefenseEV":0,"speedEV":0,"genderRatio":25,"species":"Fairy Pokémon","japaneseName":"グランブル","hepburnName":"Guranburu","eggGroups":"Field, Fairy","_id":"00210","_rev":"1-A"}
-
-	*/
-	SpecialAttackEV  int         `json:"specialAttackEV"`
-	HpEV             int         `json:"hpEV"`
-	HatchSteps       int         `json:"hatchSteps"`
-	DefenseEV        int         `json:"defenseEV"`
-	AttackEV         int         `json:"attackEV"`
-	SpecialDefenseEV int         `json:"specialDefenseEV"`
-	SpeedEV          int         `json:"speedEV"`
-	GenderRatio      interface{} `json:"genderRatio"`
-	Species          string      `json:"species"`
-	JapaneseName     string      `json:"japaneseName"`
-	HepburnName      string      `json:"Guranburu"`
-	EggGroups        string      `json:"eggGroups"`
-
-	ID  string `json:"_id"`
-	Rev string `json:"_rev"`
-}
-
 // InputData represents the structure of the input text file.
 type InputData struct {
-	Docs []Data `json:"docs"`
-	Seq  int    `json:"seq"`
+	Docs []models.MonsterSupplemental `json:"docs"`
+	Seq  int                          `json:"seq"`
 }
 
-func main() {
+func crawl() {
 	// URL to fetch the data from
 	for i := 1; i <= 3; i++ {
 		url := fmt.Sprintf("https://pokedex.org/assets/monsters-supplemental-%d.txt", i)

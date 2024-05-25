@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/mdhuy17/project_netcentric_g5/internal/handlers"
+	"github.com/mdhuy17/project_netcentric_g5/internal/repositories"
 	"github.com/mdhuy17/project_netcentric_g5/utils"
 	"log"
 	"net"
@@ -42,7 +42,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 // ReadFile reads the content of the specified file
 func (s *Server) GetPokemon(name string) ([]byte, error) {
-	var pokedex handlers.Pokedex
+	var pokedex repositories.Pokedex
 	data, err := pokedex.GetMonsterByID(utils.PokeMap[name])
 	if err != nil {
 		return []byte{}, err

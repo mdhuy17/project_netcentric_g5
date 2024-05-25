@@ -3,6 +3,7 @@ package evolutions
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mdhuy17/project_netcentric_g5/internal/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,26 +11,10 @@ import (
 	"strings"
 )
 
-// Move represents a Pokémon move.
-
-type Up struct {
-	NationalId int    `json:"nationalId"`
-	Name       string `json:"name"`
-	Method     string `json:"method"`
-	Level      int    `json:"level"`
-}
-
-type Data struct {
-	From []Up   `json:"from"`
-	To   []Up   `json:"to"`
-	ID   string `json:"_id"`
-	Rev  string `json:"_rev"`
-}
-
 // InputData represents the structure of the input text file.
 type InputData struct {
-	Docs []Data `json:"docs"`
-	Seq  int    `json:"seq"`
+	Docs []models.Evolution `json:"docs"`
+	Seq  int                `json:"seq"`
 }
 
 func crawl() {

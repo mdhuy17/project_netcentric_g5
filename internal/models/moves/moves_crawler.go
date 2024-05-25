@@ -3,6 +3,7 @@ package moves
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mdhuy17/project_netcentric_g5/internal/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,26 +11,13 @@ import (
 	"strings"
 )
 
-// Move represents a Pokémon move.
-type Data struct {
-	TypeName    string      `json:"type_name"`
-	Identifier  string      `json:"identifier"`
-	Power       interface{} `json:"power"`
-	PP          interface{} `json:"pp"`
-	Accuracy    interface{} `json:"accuracy"`
-	Description string      `json:"description"`
-	Name        string      `json:"name"`
-	ID          string      `json:"_id"`
-	Rev         string      `json:"_rev"`
-}
-
 // InputData represents the structure of the input text file.
 type InputData struct {
-	Docs []Data `json:"docs"`
-	Seq  int    `json:"seq"`
+	Docs []models.Move `json:"docs"`
+	Seq  int           `json:"seq"`
 }
 
-func main() {
+func crawl() {
 	// URL to fetch the data from
 	for i := 1; i <= 3; i++ {
 		url := fmt.Sprintf("https://pokedex.org/assets/moves-%d.txt", i)

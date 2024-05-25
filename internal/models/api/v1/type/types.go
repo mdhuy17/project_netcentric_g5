@@ -3,6 +3,7 @@ package _type
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mdhuy17/project_netcentric_g5/internal/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,28 +13,13 @@ import (
 
 // Move represents a Pokémon move.
 
-type When struct {
-	/*
-		"multiplier":0.5,"name":"fire"
-	*/
-	Multiplier interface{} `json:"multiplier"`
-	Name       string      `json:"name"`
-}
-
-type Data struct {
-	WhenDefending []When `json:"whenDefending"`
-	WhenAttacking []When `json:"whenAttacking"`
-	ID            string `json:"_id"`
-	Rev           string `json:"_rev"`
-}
-
 // InputData represents the structure of the input text file.
 type InputData struct {
-	Docs []Data `json:"docs"`
-	Seq  int    `json:"seq"`
+	Docs []models.Types `json:"docs"`
+	Seq  int            `json:"seq"`
 }
 
-func main() {
+func crawl() {
 	// URL to fetch the data from
 	url := fmt.Sprintf("https://pokedex.org/assets/types.txt")
 

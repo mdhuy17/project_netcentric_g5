@@ -1,15 +1,9 @@
-package handlers
+package repositories
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mdhuy17/project_netcentric_g5/internal/models/api/v1/description"
-	_type "github.com/mdhuy17/project_netcentric_g5/internal/models/api/v1/type"
-	"github.com/mdhuy17/project_netcentric_g5/internal/models/evolutions"
-	"github.com/mdhuy17/project_netcentric_g5/internal/models/monster_moves"
-	"github.com/mdhuy17/project_netcentric_g5/internal/models/monster_supplementals"
-	"github.com/mdhuy17/project_netcentric_g5/internal/models/moves"
-	"github.com/mdhuy17/project_netcentric_g5/internal/models/skim_monsters"
+	"github.com/mdhuy17/project_netcentric_g5/internal/models"
 	"github.com/mdhuy17/project_netcentric_g5/utils"
 	"io/ioutil"
 )
@@ -20,22 +14,22 @@ type Pokedex struct {
 var BasePath = "./internal/models"
 
 type Pokemon struct {
-	Skim                *skim_monsters.Data
-	Evol                *evolutions.Data
-	MonsterMoves        []*moves.Data
-	MonsterSupplemental *monster_supplementals.Data
-	Description         []*description.Data
-	Types               []*_type.Data
+	Monster             *models.Monster             `json:"monster"`
+	Description         []*models.Descriptions      `json:"description"`
+	Evolution           *models.Evolution           `json:"evolution"`
+	Types               []*models.Types             `json:"types"`
+	MonsterMoves        []*models.Move              `json:"monster_moves"`
+	MonsterSupplemental *models.MonsterSupplemental `json:"monster_supplemental"`
 }
 
-func (p *Pokedex) GetMonsterMovesByID(id string) ([]*moves.Data, error) {
-	var data []*moves.Data
+func (p *Pokedex) GetMonsterMovesByID(id string) ([]*models.Move, error) {
+	var data []*models.Move
 	pathFile := fmt.Sprintf("%s/monster_moves/data/%s.json", BasePath, id)
 	file, err := ioutil.ReadFile(pathFile)
 	if err != nil {
 		return nil, err
 	}
-	var monsterMove monster_moves.Data
+	var monsterMove models.MonsterMove
 	err = json.Unmarshal(file, &monsterMove)
 	if err != nil {
 		return nil, err
@@ -48,7 +42,7 @@ func (p *Pokedex) GetMonsterMovesByID(id string) ([]*moves.Data, error) {
 		if err != nil {
 			return nil, err
 		}
-		var m moves.Data
+		var m models.Move
 		err = json.Unmarshal(file, &m)
 		if err != nil {
 			return nil, err
@@ -59,8 +53,8 @@ func (p *Pokedex) GetMonsterMovesByID(id string) ([]*moves.Data, error) {
 
 }
 
-func (p *Pokedex) GetMonsterTypeByID(path []skim_monsters.ListMapObject) ([]*_type.Data, error) {
-	var data []*_type.Data
+func (p *Pokedex) GetMonsterTypeByID(path []models.ListMapObject) ([]*models.Types, error) {
+	var data []*models.Types
 	for _, id := range path {
 		pathFile := fmt.Sprintf("%s/api/v1/type/%s/poke.json", BasePath, id.Name)
 		file, err := ioutil.ReadFile(pathFile)
@@ -68,7 +62,7 @@ func (p *Pokedex) GetMonsterTypeByID(path []skim_monsters.ListMapObject) ([]*_ty
 			return nil, err
 
 		}
-		var t _type.Data
+		var t models.Types
 		err = json.Unmarshal(file, &t)
 		if err != nil {
 			return nil, err
@@ -79,15 +73,15 @@ func (p *Pokedex) GetMonsterTypeByID(path []skim_monsters.ListMapObject) ([]*_ty
 	return data, nil
 }
 
-func (p *Pokedex) GetMonsterDescription(path []skim_monsters.ListMapObject) ([]*description.Data, error) {
-	var data []*description.Data
+func (p *Pokedex) GetMonsterDescription(path []models.ListMapObject) ([]*models.Descriptions, error) {
+	var data []*models.Descriptions
 	for _, id := range path {
 		pathFile := fmt.Sprintf("%s%s/poke.json", BasePath, id.ResourceURI)
 		file, err := ioutil.ReadFile(pathFile)
 		if err != nil {
 			return nil, err
 		}
-		var desc description.Data
+		var desc models.Descriptions
 		err = json.Unmarshal(file, &desc)
 		if err != nil {
 			return nil, err
@@ -105,7 +99,7 @@ func (p *Pokedex) GetMonsterByID(id string) (*Pokemon, error) {
 	if err != nil {
 		return nil, err
 	}
-	var monster skim_monsters.Data
+	var monster models.SkimMonster
 	err = json.Unmarshal(file, &monster)
 	if err != nil {
 		return nil, err
@@ -116,7 +110,7 @@ func (p *Pokedex) GetMonsterByID(id string) (*Pokemon, error) {
 	if err != nil {
 		return nil, err
 	}
-	var evol evolutions.Data
+	var evol models.Evolution
 	err = json.Unmarshal(file, &evol)
 	if err != nil {
 		return nil, err
@@ -127,7 +121,7 @@ func (p *Pokedex) GetMonsterByID(id string) (*Pokemon, error) {
 	if err != nil {
 		return nil, err
 	}
-	var supp monster_supplementals.Data
+	var supp *models.MonsterSupplemental
 	err = json.Unmarshal(file, &supp)
 	if err != nil {
 		return nil, err
@@ -150,30 +144,30 @@ func (p *Pokedex) GetMonsterByID(id string) (*Pokemon, error) {
 	}
 
 	return &Pokemon{
-		Skim:                &monster,
-		Evol:                &evol,
+		Monster:             monster.ToMonster(),
+		Evolution:           &evol,
 		MonsterMoves:        monsterMoves,
-		MonsterSupplemental: &supp,
+		MonsterSupplemental: supp,
 		Description:         desc,
 		Types:               types,
 	}, nil
 }
 
-func main() {
+func crawl() string {
 
 	var pokedex Pokedex
 
 	data, err := pokedex.GetMonsterByID(utils.PokeMap["Ivysaur"])
 	if err != nil {
-		return
+		return ""
 	}
 	jsonData, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
+		return ""
 	}
 
 	// Print JSON data
-	fmt.Println(string(jsonData))
+	return string(jsonData)
 
 }
