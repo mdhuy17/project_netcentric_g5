@@ -1,0 +1,7 @@
+/internal/models/evolutions/evolution_crawler.go
+/internal/models/api/v1/description/descriptions.go
+/internal/models/api/v1/type/types.go
+/internal/models/monster_moves/monster_moves_crawler.go
+/internal/models/monster_supplementals/monster_supplementals_crawler.go
+/internal/models/moves/moves_crawler.go
+/internal/models/skim_monsters/skim_monster_crawler.go
