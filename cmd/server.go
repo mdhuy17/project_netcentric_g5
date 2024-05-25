@@ -2,10 +2,9 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
+	"github.com/mdhuy17/project_netcentric_g5/internal/handlers"
 	"github.com/mdhuy17/project_netcentric_g5/internal/repositories"
-	"github.com/mdhuy17/project_netcentric_g5/utils"
 	"log"
 	"net"
 	"strings"
@@ -16,6 +15,9 @@ type Server struct{}
 
 func (s *Server) HandleConnection(conn net.Conn) {
 	defer conn.Close()
+	var BasePath = "./internal/models"
+	pokedexRepository := repositories.NewPokedexRepository(BasePath)
+	pokedexHandler := handlers.NewPokeDexHandler(pokedexRepository)
 
 	fileName, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
@@ -25,7 +27,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 	fileName = strings.TrimSpace(fileName)
 
 	// Read the file content
-	fileContent, err := s.GetPokemon(fileName)
+	fileContent, err := pokedexHandler.GetPokemon(fileName)
 	if err != nil {
 		log.Println("Error reading file:", err)
 		conn.Write([]byte("Error reading file\n"))
@@ -38,20 +40,6 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		log.Println("Error writing to connection:", err)
 		return
 	}
-}
-
-// ReadFile reads the content of the specified file
-func (s *Server) GetPokemon(name string) ([]byte, error) {
-	var pokedex repositories.Pokedex
-	data, err := pokedex.GetMonsterByID(utils.PokeMap[name])
-	if err != nil {
-		return []byte{}, err
-	}
-	jsonData, err := json.MarshalIndent(data, "", "    ")
-	if err != nil {
-		return []byte{}, err
-	}
-	return jsonData, nil
 }
 
 func main() {

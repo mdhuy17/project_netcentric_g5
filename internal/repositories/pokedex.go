@@ -8,10 +8,15 @@ import (
 	"io/ioutil"
 )
 
-type Pokedex struct {
+type PokedexRepository struct {
+	BasePath string
 }
 
-var BasePath = "./internal/models"
+func NewPokedexRepository(baseFilePath string) *PokedexRepository {
+	return &PokedexRepository{
+		BasePath: baseFilePath,
+	}
+}
 
 type Pokemon struct {
 	Monster             *models.Monster             `json:"monster"`
@@ -22,9 +27,9 @@ type Pokemon struct {
 	MonsterSupplemental *models.MonsterSupplemental `json:"monster_supplemental"`
 }
 
-func (p *Pokedex) GetMonsterMovesByID(id string) ([]*models.Move, error) {
+func (p *PokedexRepository) GetMonsterMovesByID(id string) ([]*models.Move, error) {
 	var data []*models.Move
-	pathFile := fmt.Sprintf("%s/monster_moves/data/%s.json", BasePath, id)
+	pathFile := fmt.Sprintf("%s/monster_moves/data/%s.json", p.BasePath, id)
 	file, err := ioutil.ReadFile(pathFile)
 	if err != nil {
 		return nil, err
@@ -37,7 +42,7 @@ func (p *Pokedex) GetMonsterMovesByID(id string) ([]*models.Move, error) {
 
 	requestMoves := monsterMove.Move
 	for _, move := range requestMoves {
-		pathFile = fmt.Sprintf("%s/moves/data/%d.json", BasePath, move.Id)
+		pathFile = fmt.Sprintf("%s/moves/data/%d.json", p.BasePath, move.Id)
 		file, err = ioutil.ReadFile(pathFile)
 		if err != nil {
 			return nil, err
@@ -53,10 +58,10 @@ func (p *Pokedex) GetMonsterMovesByID(id string) ([]*models.Move, error) {
 
 }
 
-func (p *Pokedex) GetMonsterTypeByID(path []models.ListMapObject) ([]*models.Types, error) {
+func (p *PokedexRepository) GetMonsterTypeByID(path []models.ListMapObject) ([]*models.Types, error) {
 	var data []*models.Types
 	for _, id := range path {
-		pathFile := fmt.Sprintf("%s/api/v1/type/%s/poke.json", BasePath, id.Name)
+		pathFile := fmt.Sprintf("%s/api/v1/type/%s/poke.json", p.BasePath, id.Name)
 		file, err := ioutil.ReadFile(pathFile)
 		if err != nil {
 			return nil, err
@@ -73,10 +78,10 @@ func (p *Pokedex) GetMonsterTypeByID(path []models.ListMapObject) ([]*models.Typ
 	return data, nil
 }
 
-func (p *Pokedex) GetMonsterDescription(path []models.ListMapObject) ([]*models.Descriptions, error) {
+func (p *PokedexRepository) GetMonsterDescription(path []models.ListMapObject) ([]*models.Descriptions, error) {
 	var data []*models.Descriptions
 	for _, id := range path {
-		pathFile := fmt.Sprintf("%s%s/poke.json", BasePath, id.ResourceURI)
+		pathFile := fmt.Sprintf("%s%s/poke.json", p.BasePath, id.ResourceURI)
 		file, err := ioutil.ReadFile(pathFile)
 		if err != nil {
 			return nil, err
@@ -93,8 +98,8 @@ func (p *Pokedex) GetMonsterDescription(path []models.ListMapObject) ([]*models.
 
 }
 
-func (p *Pokedex) GetMonsterByID(id string) (*Pokemon, error) {
-	pathFile := fmt.Sprintf("%s/skim_monsters/data/%s.json", BasePath, id)
+func (p *PokedexRepository) GetMonsterByID(id string) (*Pokemon, error) {
+	pathFile := fmt.Sprintf("%s/skim_monsters/data/%s.json", p.BasePath, id)
 	file, err := ioutil.ReadFile(pathFile)
 	if err != nil {
 		return nil, err
@@ -105,7 +110,7 @@ func (p *Pokedex) GetMonsterByID(id string) (*Pokemon, error) {
 		return nil, err
 	}
 
-	pathFile = fmt.Sprintf("%s/evolutions/data/%s.json", BasePath, id)
+	pathFile = fmt.Sprintf("%s/evolutions/data/%s.json", p.BasePath, id)
 	file, err = ioutil.ReadFile(pathFile)
 	if err != nil {
 		return nil, err
@@ -116,7 +121,7 @@ func (p *Pokedex) GetMonsterByID(id string) (*Pokemon, error) {
 		return nil, err
 	}
 
-	pathFile = fmt.Sprintf("%s/monster_supplementals/data/%s.json", BasePath, id)
+	pathFile = fmt.Sprintf("%s/monster_supplementals/data/%s.json", p.BasePath, id)
 	file, err = ioutil.ReadFile(pathFile)
 	if err != nil {
 		return nil, err
@@ -155,7 +160,7 @@ func (p *Pokedex) GetMonsterByID(id string) (*Pokemon, error) {
 
 func crawl() string {
 
-	var pokedex Pokedex
+	var pokedex PokedexRepository
 
 	data, err := pokedex.GetMonsterByID(utils.PokeMap["Ivysaur"])
 	if err != nil {
