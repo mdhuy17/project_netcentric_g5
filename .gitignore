@@ -5,3 +5,14 @@
 /internal/models/monster_supplementals/monster_supplementals_crawler.go
 /internal/models/moves/moves_crawler.go
 /internal/models/skim_monsters/skim_monster_crawler.go
+/internal/models/api/
+
+/internal/models/evolutions/
+
+/internal/models/monster_moves/
+
+/internal/models/monster_supplementals/
+
+/internal/models/moves/
+
+/internal/models/skim_monsters/
