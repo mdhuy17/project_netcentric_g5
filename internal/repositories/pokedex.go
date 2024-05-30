@@ -23,8 +23,8 @@ type Pokemon struct {
 	Description         []*models.Descriptions      `json:"description"`
 	Evolution           *models.Evolution           `json:"evolution"`
 	Types               []*models.Types             `json:"types"`
-	MonsterMoves        []*models.Move              `json:"monster_moves"`
 	MonsterSupplemental *models.MonsterSupplemental `json:"monster_supplemental"`
+	MonsterMoves        []*models.Move              `json:"monster_moves"`
 }
 
 func (p *PokedexRepository) GetMonsterMovesByID(id string) ([]*models.Move, error) {
