@@ -2,16 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/mdhuy17/project_netcentric_g5/battleServer/usermanager"
 	"net"
 	"strconv"
 	"strings"
 )
-
-type Client struct {
-	conn     net.Conn
-	username string
-	pokemons []string
-}
 
 func main() {
 	startTCPServer()
@@ -28,7 +23,7 @@ func startTCPServer() {
 
 	fmt.Println("TCP server listening on :8000")
 
-	clients := make(map[net.Conn]*Client)
+	userManager := usermanager.NewUserManager()
 
 	for {
 		// Wait for a connection
@@ -39,11 +34,11 @@ func startTCPServer() {
 		}
 
 		// Handle the connection in a new goroutine
-		go handleConnection(conn, clients)
+		go handleConnection(conn, userManager)
 	}
 }
 
-func handleConnection(conn net.Conn, clients map[net.Conn]*Client) {
+func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 	defer conn.Close()
 
 	buf := make([]byte, 1024)
@@ -63,12 +58,9 @@ func handleConnection(conn net.Conn, clients map[net.Conn]*Client) {
 		case 1:
 			// New client connection
 			username := parts[0]
-			clients[conn] = &Client{
-				conn:     conn,
-				username: username,
-				pokemons: make([]string, 3), // Initialize the slice with a length of 3
-			}
-			fmt.Printf("New client connected: %s\n", username)
+			user := userManager.AddUser(username, conn)
+			fmt.Printf("New client connected: %s\n", user.Username)
+
 		case 3:
 			// Received a Pokemon
 			username := parts[0]
@@ -79,56 +71,34 @@ func handleConnection(conn net.Conn, clients map[net.Conn]*Client) {
 			}
 			pokemonName := parts[2]
 
-			client, ok := clients[conn]
-			if !ok {
-				fmt.Printf("Received message from unknown client: %s\n", data)
-				return
+			userManager.UpdatePokemons(username, pokemonName, pokemonNumber)
+			fmt.Printf("%s added Pokemon %d: %s\n", username, pokemonNumber, pokemonName)
+
+			if userManager.AllPokemonsProvided(username) {
+				broadcastPokemons(userManager.Users)
 			}
 
-			if pokemonNumber >= 1 && pokemonNumber <= len(client.pokemons) {
-				client.pokemons[pokemonNumber-1] = pokemonName
-				fmt.Printf("%s added Pokemon %d: %s\n", username, pokemonNumber, pokemonName)
-
-				// Check if the client has provided all 3 Pokemon
-				if allPokemonsProvided(client) {
-					// Broadcast the updated Pokemon list to all clients
-					broadcastPokemons(clients)
-				}
-			} else {
-				fmt.Printf("Invalid Pokemon number received from %s: %d\n", username, pokemonNumber)
-			}
 		default:
 			fmt.Printf("Received unknown message: %s\n", data)
 		}
 	}
 }
 
-func broadcastPokemons(clients map[net.Conn]*Client) {
-	for _, client := range clients {
-		message := fmt.Sprintf("%s's Pokemon: %s\nOpponent's Pokemon: %s", client.username, strings.Join(client.pokemons, ", "), getOpponentPokemons(clients, client))
-		_, err := client.conn.Write([]byte(message))
+func broadcastPokemons(users map[string]*usermanager.User) {
+	for _, user := range users {
+		message := fmt.Sprintf("%s's Pokemon: %s\nOpponent's Pokemon: %s", user.Username, strings.Join(user.Pokemons, ", "), strings.Join(getOpponentPokemons(users, user), ", "))
+		_, err := user.Conn.Write([]byte(message))
 		if err != nil {
-			fmt.Printf("Error sending message to %s: %v\n", client.username, err)
+			fmt.Printf("Error sending message to %s: %v\n", user.Username, err)
 		}
 	}
 }
 
-func allPokemonsProvided(client *Client) bool {
-	for _, pokemon := range client.pokemons {
-		if pokemon == "" {
-			return false
+func getOpponentPokemons(users map[string]*usermanager.User, currentUser *usermanager.User) []string {
+	for _, user := range users {
+		if user != currentUser {
+			return user.Pokemons
 		}
 	}
-	return true
-}
-
-func getOpponentPokemons(clients map[net.Conn]*Client, currentClient *Client) string {
-	var opponentPokemons []string
-	for _, client := range clients {
-		if client != currentClient {
-			opponentPokemons = client.pokemons
-			break
-		}
-	}
-	return strings.Join(opponentPokemons, ", ")
+	return nil
 }
