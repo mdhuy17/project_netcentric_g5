@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"time"
 )
 
 func main() {
@@ -69,7 +68,7 @@ func readAndSendPokemons(conn net.Conn, username string) {
 	}
 	// Wait for the server's response before exiting
 	for {
-		start := time.Now()
+		//start := time.Now()
 		buf := make([]byte, 1024)
 		n, err := conn.Read(buf)
 		if err != nil {
@@ -81,13 +80,13 @@ func readAndSendPokemons(conn net.Conn, username string) {
 		fmt.Println(response)
 
 		// Check if the server has sent the final message
-		if strings.Contains(response, "Opponent's Pokemon:") {
-			continue
-		}
-		if time.Since(start) >= 3*time.Second {
-			fmt.Println("Server is not responding, exiting client.")
+		if strings.Contains(response, "Battle Commence") {
 			return
 		}
+		//if time.Since(start) >= 3*time.Second {
+		//	fmt.Println("Server is not responding, exiting client.")
+		//	return
+		//}
 	}
 
 	fmt.Println("Exiting client.")
