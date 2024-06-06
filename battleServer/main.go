@@ -62,43 +62,20 @@ func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 			fmt.Printf("New client connected: %s\n", user.Username)
 
 		case 3:
-			// Received a Pokemon
+			// Received Pokemon information
 			username := parts[0]
-			pokemonNumber, err := strconv.Atoi(parts[1][len("Pokemon "):])
-			if err != nil {
-				fmt.Printf("Invalid Pokemon number received from %s: %s\n", username, parts[1])
-				return
-			}
+			pokemonNumber, _ := strconv.Atoi(parts[1][len("Pokemon "):])
 			pokemonName := parts[2]
 
 			userManager.UpdatePokemons(username, pokemonName, pokemonNumber)
 			fmt.Printf("%s added Pokemon %d: %s\n", username, pokemonNumber, pokemonName)
 
-			if userManager.AllPokemonsProvided(username) {
-				broadcastPokemons(userManager.Users)
+			if userManager.AllPokemonsProvided() && len(userManager.Users) == 2 {
+				userManager.StartBattle()
 			}
 
 		default:
 			fmt.Printf("Received unknown message: %s\n", data)
 		}
 	}
-}
-
-func broadcastPokemons(users map[string]*usermanager.User) {
-	for _, user := range users {
-		message := fmt.Sprintf("%s's Pokemon: %s\nOpponent's Pokemon: %s", user.Username, strings.Join(user.Pokemons, ", "), strings.Join(getOpponentPokemons(users, user), ", "))
-		_, err := user.Conn.Write([]byte(message))
-		if err != nil {
-			fmt.Printf("Error sending message to %s: %v\n", user.Username, err)
-		}
-	}
-}
-
-func getOpponentPokemons(users map[string]*usermanager.User, currentUser *usermanager.User) []string {
-	for _, user := range users {
-		if user != currentUser {
-			return user.Pokemons
-		}
-	}
-	return nil
 }

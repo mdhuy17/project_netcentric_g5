@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -35,9 +36,9 @@ func startTCPClient() {
 
 	// Start a goroutine to read responses from the server
 	go readResponsesFromServer(conn)
-
 	// Read user input and send it to the server
 	readAndSendPokemons(conn, username)
+
 }
 
 func getUsernameFromInput() string {
@@ -66,10 +67,31 @@ func readAndSendPokemons(conn net.Conn, username string) {
 			return
 		}
 	}
+	// Wait for the server's response before exiting
+	for {
+		start := time.Now()
+		buf := make([]byte, 1024)
+		n, err := conn.Read(buf)
+		if err != nil {
+			fmt.Println("Error reading from connection:", err)
+			return
+		}
+
+		response := strings.TrimSpace(string(buf[:n]))
+		fmt.Println(response)
+
+		// Check if the server has sent the final message
+		if strings.Contains(response, "Opponent's Pokemon:") {
+			continue
+		}
+		if time.Since(start) >= 3*time.Second {
+			fmt.Println("Server is not responding, exiting client.")
+			return
+		}
+	}
 
 	fmt.Println("Exiting client.")
 }
-
 func readResponsesFromServer(conn net.Conn) {
 	buf := make([]byte, 1024)
 	for {
