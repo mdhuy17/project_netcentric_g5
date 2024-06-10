@@ -81,7 +81,7 @@ func (p *PokedexRepository) GetMonsterTypeByID(path []models.ListMapObject) ([]*
 func (p *PokedexRepository) GetMonsterDescription(path []models.ListMapObject) ([]*models.Descriptions, error) {
 	var data []*models.Descriptions
 	for _, id := range path {
-		pathFile := fmt.Sprintf("%s%s/poke.json", p.BasePath, id.ResourceURI)
+		pathFile := fmt.Sprintf("%s%spoke.json", p.BasePath, id.ResourceURI)
 		file, err := ioutil.ReadFile(pathFile)
 		if err != nil {
 			return nil, err
@@ -137,11 +137,7 @@ func (p *PokedexRepository) GetMonsterByID(id string) (*Pokemon, error) {
 		return nil, err
 	}
 
-	desc, err := p.GetMonsterDescription(monster.Description)
-	if err != nil {
-		return nil, err
-
-	}
+	desc, _ := p.GetMonsterDescription(monster.Description)
 
 	types, err := p.GetMonsterTypeByID(monster.Type)
 	if err != nil {
