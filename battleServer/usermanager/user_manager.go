@@ -1,15 +1,29 @@
 package usermanager
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/mdhuy17/project_netcentric_g5/internal/models"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 type User struct {
-	Username string
-	Pokemons []string
-	Conn     net.Conn
+	Username    string
+	Pokemons    []string
+	Conn        net.Conn
+	PokemonData []*PokemonData
+}
+
+type PokemonData struct {
+	Monster             *models.Monster             `json:"monster"`
+	Description         []*models.Descriptions      `json:"description"`
+	Evolution           *models.Evolution           `json:"evolution"`
+	Types               []*models.Types             `json:"types"`
+	MonsterSupplemental *models.MonsterSupplemental `json:"monster_supplemental"`
+	MonsterMoves        []*models.Move              `json:"monster_moves"`
 }
 
 type UserManager struct {
@@ -108,4 +122,72 @@ func (um *UserManager) performBattle() {
 	// Implement the battle logic here
 	// This is where you would handle the battle between the two players
 	// and determine the winner
+}
+
+func (um *UserManager) UpdatePokemonData(username, pokemonName string, pokemonIndex int) error {
+	user, exists := um.Users[username]
+	if !exists {
+		return fmt.Errorf("user %s not found", username)
+	}
+	pokemonID := getPokemonIDFromName(pokemonName)
+
+	// Construct the path to the Pokemon data file relative to the current file
+	pokemonDataFilePath := filepath.Join("..", "internal", "models", "monsters", "data", fmt.Sprintf("%d.json", pokemonID))
+	pokemonData, err := readPokemonJSONData(pokemonDataFilePath)
+	if err != nil {
+		return fmt.Errorf("error reading Pokemon data: %v", err)
+	}
+
+	// Update the user's Pokemon information
+	if len(user.PokemonData) < pokemonIndex {
+		user.PokemonData = append(user.PokemonData, pokemonData)
+	} else {
+		user.PokemonData[pokemonIndex-1] = pokemonData
+	}
+
+	return nil
+}
+func getPokemonIDFromName(pokemonName string) int {
+	// Construct the path to the pokemonNames.json file relative to the main.go file
+	jsonFilePath := filepath.Join("..", "internal", "models", "pokemonNames.json")
+
+	// Read the pokemonNames.json file
+	data, err := os.ReadFile(jsonFilePath)
+	if err != nil {
+		fmt.Printf("Error reading pokemonNames.json file: %v\n", err)
+		return 0
+	}
+
+	// Unmarshal the JSON data into a slice of strings
+	var pokemonNames []string
+	err = json.Unmarshal(data, &pokemonNames)
+	if err != nil {
+		fmt.Printf("Error unmarshaling pokemonNames.json data: %v\n", err)
+		return 0
+	}
+
+	// Search for the Pokemon name in the slice and return the index (which is the ID)
+	for i, name := range pokemonNames {
+		if name == pokemonName {
+			return i + 1 // The IDs start from 1, not 0
+		}
+	}
+
+	fmt.Printf("Pokemon name '%s' not found in pokemonNames.json\n", pokemonName)
+	return 0
+}
+func readPokemonJSONData(filePath string) (*PokemonData, error) {
+	// Read the JSON data from the file
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var pokemonData PokemonData
+	err = json.Unmarshal(data, &pokemonData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pokemonData, nil
 }

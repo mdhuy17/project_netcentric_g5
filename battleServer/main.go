@@ -60,12 +60,17 @@ func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 			username := parts[0]
 			user := userManager.AddUser(username, conn)
 			fmt.Printf("New client connected: %s\n", user.Username)
-
 		case 3:
 			// Received Pokemon information
 			username := parts[0]
 			pokemonNumber, _ := strconv.Atoi(parts[1][len("Pokemon "):])
 			pokemonName := parts[2]
+
+			err := userManager.UpdatePokemonData(username, pokemonName, pokemonNumber)
+			if err != nil {
+				fmt.Printf("Error updating Pokemon data for %s: %v\n", username, err)
+				continue
+			}
 
 			userManager.UpdatePokemons(username, pokemonName, pokemonNumber)
 			fmt.Printf("%s added Pokemon %d: %s\n", username, pokemonNumber, pokemonName)
