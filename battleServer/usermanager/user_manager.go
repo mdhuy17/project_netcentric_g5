@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/mdhuy17/project_netcentric_g5/internal/models"
+	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
@@ -11,10 +12,12 @@ import (
 )
 
 type User struct {
-	Username    string
-	Pokemons    []string
-	Conn        net.Conn
-	PokemonData []*PokemonData
+	Username      string
+	Pokemons      []string
+	Conn          net.Conn
+	PokemonData   []*PokemonData
+	ActivePokemon *PokemonData
+	ActiveHP      int
 }
 
 type PokemonData struct {
@@ -27,7 +30,18 @@ type PokemonData struct {
 }
 
 type UserManager struct {
-	Users map[string]*User
+	Users         map[string]*User
+	CurrentTurn   string
+	BattleStarted bool
+}
+
+var userManagerInstance *UserManager
+
+func GetUserManagerInstance() *UserManager {
+	if userManagerInstance == nil {
+		userManagerInstance = NewUserManager()
+	}
+	return userManagerInstance
 }
 
 func NewUserManager() *UserManager {
@@ -83,6 +97,11 @@ func (um *UserManager) AllPokemonsProvided() bool {
 		}
 	}
 
+	// Set initial Pokemon and HP
+	for _, user := range um.Users {
+		user.ActivePokemon = user.PokemonData[0]
+		user.ActiveHP = user.ActivePokemon.Monster.HP
+	}
 	return true
 }
 
@@ -90,8 +109,30 @@ func (um *UserManager) StartBattle() {
 	// Broadcast the Pokemon information to both players
 	um.broadcastPokemons()
 
-	// Implement the battle logic here
-	um.performBattle()
+	// Determine the player who goes first based on the speed of their first Pokemon
+	um.determineTurnOrder()
+}
+
+func (um *UserManager) determineTurnOrder() {
+	// Determine the player who goes first based on the speed of their first Pokemon
+	user1 := um.Users[um.getPlayerNames()[0]]
+	user2 := um.Users[um.getPlayerNames()[1]]
+
+	if user1.PokemonData[0].Monster.Speed > user2.PokemonData[0].Monster.Speed {
+		um.CurrentTurn = user1.Username
+	} else {
+		um.CurrentTurn = user2.Username
+	}
+
+	um.BattleStarted = true
+}
+
+func (um *UserManager) getPlayerNames() []string {
+	var playerNames []string
+	for username := range um.Users {
+		playerNames = append(playerNames, username)
+	}
+	return playerNames
 }
 
 func (um *UserManager) broadcastPokemons() {
@@ -118,10 +159,180 @@ func (um *UserManager) getOpponentPokemons(currentUser *User) []string {
 	return nil
 }
 
-func (um *UserManager) performBattle() {
-	// Implement the battle logic here
-	// This is where you would handle the battle between the two players
-	// and determine the winner
+func (um *UserManager) PerformBattle(username, pokemonName, moveType string) {
+	for {
+		currentUser := um.Users[um.CurrentTurn]
+		opponent := um.getOpponent(currentUser.Username)
+
+		// Verify that the move type is valid (either "normal attack" or "special attack")
+		if moveType != "normal" && moveType != "special" {
+			um.sendMessageToUser(currentUser, fmt.Sprintf("Invalid move type: %s", moveType))
+			return
+		}
+		if moveType == "quit" {
+			um.announceWinner(opponent.Username)
+			return
+		}
+		// Select a random move of the chosen type
+		choosenMove := um.selectRandomMove(currentUser, moveType)
+
+		// Calculate and apply the damage
+		um.calculateAndApplyDamage(currentUser, opponent, choosenMove)
+
+		// Check if the opponent's active Pokemon is knocked out
+		if opponent.ActiveHP <= 0 {
+			if um.hasLost(opponent) {
+				um.announceWinner(currentUser.Username)
+				return
+			}
+			um.replaceKnockedOutPokemon(opponent)
+		}
+
+		// Switch the turn to the other player
+		um.switchTurn()
+	}
+}
+
+func (um *UserManager) selectRandomMove(user *User, moveType string) string {
+	// Filter the moves that match the specified type
+	var matchingMoves []*models.Move
+	if moveType == "special" {
+		for _, move := range user.ActivePokemon.MonsterMoves {
+			if move.TypeName != "normal" && move.Power != "" {
+				matchingMoves = append(matchingMoves, move)
+			}
+		}
+	} else {
+		for _, move := range user.ActivePokemon.MonsterMoves {
+			if move.TypeName == moveType {
+				matchingMoves = append(matchingMoves, move)
+			}
+		}
+	}
+
+	// If there are no matching moves, return an empty string
+	if len(matchingMoves) == 0 {
+		return ""
+	}
+
+	// Select a random move from the matching moves
+	randomIndex := rand.Intn(len(matchingMoves))
+	selectedMove := matchingMoves[randomIndex]
+	return selectedMove.Name
+}
+
+func (um *UserManager) calculateAndApplyDamage(currentUser, defender *User, moveName string) {
+	// Find the move object based on the move name
+	var attackingMove *models.Move
+	for _, move := range currentUser.ActivePokemon.MonsterMoves {
+		if move.Name == moveName {
+			attackingMove = move
+			break
+		}
+	}
+
+	if attackingMove == nil {
+		um.sendMessageToUser(currentUser, fmt.Sprintf("%s does not have the move %s", currentUser.ActivePokemon.Monster.Name, moveName))
+		return
+	}
+
+	// Calculate the damage based on the move type
+	var damage int
+	if attackingMove.TypeName == "normal" {
+		damage = currentUser.ActivePokemon.Monster.Attack - defender.ActivePokemon.Monster.Defense
+	} else {
+		damage = currentUser.ActivePokemon.Monster.SpAtk - defender.ActivePokemon.Monster.SpDef
+	}
+
+	// Apply the damage to the defender's HP
+	defender.ActiveHP = defender.ActiveHP - damage
+	if defender.ActiveHP < 0 {
+		defender.ActiveHP = 0
+	}
+
+	// Send the damage update to both players
+	um.sendMessageToUser(currentUser, fmt.Sprintf("%s's %s did %d damage to %s's %s. %s's HP is now %d.", currentUser.Username, attackingMove.Name, damage, defender.Username, defender.ActivePokemon.Monster.Name, defender.Username, defender.ActiveHP))
+	um.sendMessageToUser(defender, fmt.Sprintf("%s's %s did %d damage to %s's %s. %s's HP is now %d.", currentUser.Username, attackingMove.Name, damage, defender.Username, defender.ActivePokemon.Monster.Name, defender.Username, defender.ActiveHP))
+}
+
+//func (um *UserManager) sendMoveResult(currentUser, opponent *User, moveName string) {
+//	// Send the move result to both players
+//	message := fmt.Sprintf("%s's %s used %s", currentUser.Username, currentUser.ActivePokemon.Monster.Name, moveName)
+//	um.sendMessageToUser(currentUser, message)
+//	um.sendMessageToUser(opponent, message)
+//}
+
+func (um *UserManager) sendMessageToUser(user *User, message string) {
+	_, err := user.Conn.Write([]byte(message))
+	if err != nil {
+		fmt.Printf("Error sending message to %s: %v\n", user.Username, err)
+	}
+}
+
+func (um *UserManager) getOpponent(username string) *User {
+	for _, user := range um.Users {
+		if user.Username != username {
+			return user
+		}
+	}
+	return nil
+}
+
+func (um *UserManager) replaceKnockedOutPokemon(user *User) {
+	// Find the index of the knocked out Pokemon in the user's Pokemon list
+	var knockedOutIndex int
+	for i, pokemon := range user.Pokemons {
+		if pokemon == user.ActivePokemon.Monster.Name {
+			knockedOutIndex = i
+			break
+		}
+	}
+
+	// Select the next available Pokemon
+	var nextPokemonIndex int
+	for i, _ := range user.Pokemons {
+		if i != knockedOutIndex {
+			nextPokemonIndex = i
+			break
+		}
+	}
+
+	// Update the user's active Pokemon and HP
+	user.ActivePokemon = user.PokemonData[nextPokemonIndex]
+	user.ActiveHP = user.ActivePokemon.Monster.HP
+
+	// Send a message to the user about the Pokemon change
+	um.sendMessageToUser(user, fmt.Sprintf("%s's %s has been knocked out. %s's new active Pokemon is %s.", user.Username, user.Pokemons[knockedOutIndex], user.Username, user.Pokemons[nextPokemonIndex]))
+
+	// Check if the user has no more Pokemon left
+	if len(user.Pokemons) == 0 {
+		um.announceWinner(um.getOpponent(user.Username).Username)
+	}
+}
+
+func (um *UserManager) switchTurn() {
+	// Switch the current turn to the other player
+	playerNames := um.getPlayerNames()
+	for i, name := range playerNames {
+		if name == um.CurrentTurn {
+			um.CurrentTurn = playerNames[(i+1)%len(playerNames)]
+			return
+		}
+	}
+}
+
+func (um *UserManager) hasLost(user *User) bool {
+	return len(user.Pokemons) == 0
+}
+
+func (um *UserManager) announceWinner(winner string) {
+	// Announce the winner of the battle to both players
+	for _, user := range um.Users {
+		_, err := user.Conn.Write([]byte(fmt.Sprintf("The winner is %s!", winner)))
+		if err != nil {
+			fmt.Printf("Error sending message to %s: %v\n", user.Username, err)
+		}
+	}
 }
 
 func (um *UserManager) UpdatePokemonData(username, pokemonName string, pokemonIndex int) error {
@@ -147,6 +358,7 @@ func (um *UserManager) UpdatePokemonData(username, pokemonName string, pokemonIn
 
 	return nil
 }
+
 func getPokemonIDFromName(pokemonName string) int {
 	// Construct the path to the pokemonNames.json file relative to the main.go file
 	jsonFilePath := filepath.Join("..", "internal", "models", "pokemonNames.json")
@@ -176,6 +388,7 @@ func getPokemonIDFromName(pokemonName string) int {
 	fmt.Printf("Pokemon name '%s' not found in pokemonNames.json\n", pokemonName)
 	return 0
 }
+
 func readPokemonJSONData(filePath string) (*PokemonData, error) {
 	// Read the JSON data from the file
 	data, err := os.ReadFile(filePath)

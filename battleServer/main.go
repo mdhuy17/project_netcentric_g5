@@ -52,7 +52,7 @@ func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 
 		// Parse the received data
 		data := strings.TrimSpace(string(buf[:n]))
-		parts := strings.Split(data, ": ")
+		parts := strings.Split(data, " ")
 
 		switch len(parts) {
 		case 1:
@@ -78,9 +78,14 @@ func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 			if userManager.AllPokemonsProvided() && len(userManager.Users) == 2 {
 				userManager.StartBattle()
 			}
+		case 4:
+			// Received move information
+			username := parts[0]
+			pokemonName := parts[1]
+			moveType := parts[2]
 
-		default:
-			fmt.Printf("Received unknown message: %s\n", data)
+			// Process the move information and send the result back to the clients
+			userManager.PerformBattle(username, pokemonName, moveType)
 		}
 	}
 }
