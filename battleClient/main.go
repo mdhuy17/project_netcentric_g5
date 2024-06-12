@@ -127,10 +127,9 @@ func readResponsesFromServer(conn net.Conn) {
 			return
 		}
 		response := strings.TrimSpace(string(buf[:n]))
+		fmt.Println(response)
 		if strings.Contains(response, "The winner is") {
 			break
 		}
-		fmt.Println(response)
-
 	}
 }
