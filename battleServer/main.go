@@ -20,10 +20,9 @@ func startTCPServer() {
 		return
 	}
 	defer listener.Close()
-
-	fmt.Println("TCP server listening on :8000")
-
 	userManager := usermanager.NewUserManager()
+	usermanager.SetUserManagerInstance(userManager)
+	fmt.Println("TCP server listening on :8000")
 
 	for {
 		// Wait for a connection
@@ -40,7 +39,8 @@ func startTCPServer() {
 
 func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 	defer conn.Close()
-
+	// Store the userManager instance in the singleton
+	usermanager.GetUserManagerInstance().Users = userManager.Users
 	buf := make([]byte, 1024)
 	for {
 		// Read data from the connection
@@ -63,7 +63,7 @@ func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 		case 3:
 			// Received Pokemon information
 			username := parts[0]
-			pokemonNumber, _ := strconv.Atoi(parts[1][len("Pokemon "):])
+			pokemonNumber, _ := strconv.Atoi(parts[1])
 			pokemonName := parts[2]
 
 			err := userManager.UpdatePokemonData(username, pokemonName, pokemonNumber)
@@ -79,13 +79,11 @@ func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 				userManager.StartBattle()
 			}
 		case 4:
-			// Received move information
-			username := parts[0]
-			pokemonName := parts[1]
-			moveType := parts[2]
-
-			// Process the move information and send the result back to the clients
-			userManager.PerformBattle(username, pokemonName, moveType)
+			if userManager.AllPokemonsProvided() {
+				moveType := parts[0]
+				// Process the move information and send the result back to the clients
+				userManager.PerformBattle(moveType)
+			}
 		}
 	}
 }

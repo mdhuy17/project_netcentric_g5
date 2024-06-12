@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/mdhuy17/project_netcentric_g5/battleServer/usermanager"
 	"net"
 	"os"
 	"strings"
@@ -36,6 +35,7 @@ func startTCPClient() {
 
 	// Start a goroutine to read responses from the server
 	go readResponsesFromServer(conn)
+
 	// Read user input and send it to the server
 	readAndSendPokemons(conn, username)
 
@@ -61,7 +61,7 @@ func readAndSendPokemons(conn net.Conn, username string) {
 		}
 
 		// Append the username and Pokemon number to the input text
-		text = fmt.Sprintf("%s: Pokemon %d: %s", username, i, strings.TrimSpace(text))
+		text = fmt.Sprintf("%s %d %s", username, i, strings.TrimSpace(text))
 
 		// Send the message to the server
 		_, err := conn.Write([]byte(text))
@@ -91,16 +91,12 @@ func readAndSendPokemons(conn net.Conn, username string) {
 }
 
 func readAndSendBattle(conn net.Conn, username string) {
-	um := usermanager.GetUserManagerInstance()
 	reader := bufio.NewReader(os.Stdin)
 	buf := make([]byte, 1024)
 	for {
-		currentHP := um.Users[username].ActiveHP
-		currentPokemon := um.Users[username].ActivePokemon.Monster.Name
-		currentPokemonHP := um.Users[username].ActivePokemon.Monster.HP
-		fmt.Sprintf("%s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", currentPokemon, currentHP, currentPokemonHP)
+		//fmt.Printf("Choose your next move (type in 'normal' or 'special'): ")
 		text, _ := reader.ReadString('\n')
-		text = fmt.Sprintf("%s %s %s", username, currentPokemon, strings.TrimSpace(text))
+		text = fmt.Sprintf("%s a a a", strings.TrimSpace(text))
 		// Send the message to the server
 		_, err := conn.Write([]byte(text))
 		if err != nil {
@@ -112,12 +108,10 @@ func readAndSendBattle(conn net.Conn, username string) {
 			fmt.Println("Error reading from connection:", err)
 			return
 		}
-
 		response := strings.TrimSpace(string(buf[:n]))
 		fmt.Println(response)
 	}
 }
-
 func readResponsesFromServer(conn net.Conn) {
 	buf := make([]byte, 1024)
 	for {

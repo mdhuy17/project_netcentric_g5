@@ -38,10 +38,22 @@ type UserManager struct {
 var userManagerInstance *UserManager
 
 func GetUserManagerInstance() *UserManager {
-	if userManagerInstance == nil {
-		userManagerInstance = NewUserManager()
-	}
 	return userManagerInstance
+}
+
+func SetUserManagerInstance(um *UserManager) *UserManager {
+	userManagerInstance = um
+	return userManagerInstance
+}
+
+func (um *UserManager) GetUserPokemon(username string) string {
+	return um.Users[username].ActivePokemon.Monster.Name
+}
+func (um *UserManager) GetUserPokemonHP(username string) int {
+	return um.Users[username].ActivePokemon.Monster.HP
+}
+func (um *UserManager) GetUserPokemonActiveHP(username string) int {
+	return um.Users[username].ActiveHP
 }
 
 func NewUserManager() *UserManager {
@@ -96,12 +108,6 @@ func (um *UserManager) AllPokemonsProvided() bool {
 			}
 		}
 	}
-
-	// Set initial Pokemon and HP
-	for _, user := range um.Users {
-		user.ActivePokemon = user.PokemonData[0]
-		user.ActiveHP = user.ActivePokemon.Monster.HP
-	}
 	return true
 }
 
@@ -111,6 +117,15 @@ func (um *UserManager) StartBattle() {
 
 	// Determine the player who goes first based on the speed of their first Pokemon
 	um.determineTurnOrder()
+
+	// Set initial Pokemon and HP
+	for _, user := range um.Users {
+		user.ActivePokemon = user.PokemonData[0]
+		user.ActiveHP = user.ActivePokemon.Monster.HP
+	}
+	currentUser := um.Users[um.CurrentTurn]
+	message := fmt.Sprintf("%s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", currentUser.ActivePokemon.Monster.Name, currentUser.ActiveHP, currentUser.ActivePokemon.Monster.HP)
+	um.sendMessageToUser(currentUser, message)
 }
 
 func (um *UserManager) determineTurnOrder() {
@@ -159,11 +174,10 @@ func (um *UserManager) getOpponentPokemons(currentUser *User) []string {
 	return nil
 }
 
-func (um *UserManager) PerformBattle(username, pokemonName, moveType string) {
+func (um *UserManager) PerformBattle(moveType string) {
 	for {
 		currentUser := um.Users[um.CurrentTurn]
 		opponent := um.getOpponent(currentUser.Username)
-
 		// Verify that the move type is valid (either "normal attack" or "special attack")
 		if moveType != "normal" && moveType != "special" {
 			um.sendMessageToUser(currentUser, fmt.Sprintf("Invalid move type: %s", moveType))
@@ -190,6 +204,9 @@ func (um *UserManager) PerformBattle(username, pokemonName, moveType string) {
 
 		// Switch the turn to the other player
 		um.switchTurn()
+		message := fmt.Sprintf("%s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", currentUser.ActivePokemon.Monster.Name, currentUser.ActiveHP, currentUser.ActivePokemon.Monster.HP)
+		um.sendMessageToUser(currentUser, message)
+		break
 	}
 }
 
@@ -254,13 +271,6 @@ func (um *UserManager) calculateAndApplyDamage(currentUser, defender *User, move
 	um.sendMessageToUser(currentUser, fmt.Sprintf("%s's %s did %d damage to %s's %s. %s's HP is now %d.", currentUser.Username, attackingMove.Name, damage, defender.Username, defender.ActivePokemon.Monster.Name, defender.Username, defender.ActiveHP))
 	um.sendMessageToUser(defender, fmt.Sprintf("%s's %s did %d damage to %s's %s. %s's HP is now %d.", currentUser.Username, attackingMove.Name, damage, defender.Username, defender.ActivePokemon.Monster.Name, defender.Username, defender.ActiveHP))
 }
-
-//func (um *UserManager) sendMoveResult(currentUser, opponent *User, moveName string) {
-//	// Send the move result to both players
-//	message := fmt.Sprintf("%s's %s used %s", currentUser.Username, currentUser.ActivePokemon.Monster.Name, moveName)
-//	um.sendMessageToUser(currentUser, message)
-//	um.sendMessageToUser(opponent, message)
-//}
 
 func (um *UserManager) sendMessageToUser(user *User, message string) {
 	_, err := user.Conn.Write([]byte(message))
