@@ -113,7 +113,7 @@ func readAndSendBattle(conn net.Conn, username string) {
 		response := strings.TrimSpace(string(buf[:n]))
 		fmt.Println(response)
 		// Check if the server has sent the final message
-		if strings.Contains(response, "The winner is") {
+		if strings.Contains(response, "The winner") {
 			break
 		}
 	}
@@ -126,11 +126,11 @@ func readResponsesFromServer(conn net.Conn) {
 			fmt.Println("Error reading from connection:", err)
 			return
 		}
-
 		response := strings.TrimSpace(string(buf[:n]))
-		fmt.Println(response)
 		if strings.Contains(response, "The winner is") {
 			break
 		}
+		fmt.Println(response)
+
 	}
 }
