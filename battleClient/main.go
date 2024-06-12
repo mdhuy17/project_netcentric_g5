@@ -42,6 +42,7 @@ func startTCPClient() {
 	// Read user battle inputs and send it to server
 	readAndSendBattle(conn, username)
 
+	fmt.Println("Thank you for playing")
 }
 
 func getUsernameFromInput() string {
@@ -103,6 +104,7 @@ func readAndSendBattle(conn net.Conn, username string) {
 			fmt.Println("Error writing to connection:", err)
 			return
 		}
+		// read from server
 		n, err := conn.Read(buf)
 		if err != nil {
 			fmt.Println("Error reading from connection:", err)
@@ -110,6 +112,10 @@ func readAndSendBattle(conn net.Conn, username string) {
 		}
 		response := strings.TrimSpace(string(buf[:n]))
 		fmt.Println(response)
+		// Check if the server has sent the final message
+		if strings.Contains(response, "The winner is") {
+			break
+		}
 	}
 }
 func readResponsesFromServer(conn net.Conn) {
@@ -123,5 +129,8 @@ func readResponsesFromServer(conn net.Conn) {
 
 		response := strings.TrimSpace(string(buf[:n]))
 		fmt.Println(response)
+		if strings.Contains(response, "The winner is") {
+			break
+		}
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/mdhuy17/project_netcentric_g5/internal/models"
+	"math"
 	"math/rand"
 	"net"
 	"os"
@@ -124,7 +125,7 @@ func (um *UserManager) StartBattle() {
 		user.ActiveHP = user.ActivePokemon.Monster.HP
 	}
 	currentUser := um.Users[um.CurrentTurn]
-	message := fmt.Sprintf("%s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", currentUser.ActivePokemon.Monster.Name, currentUser.ActiveHP, currentUser.ActivePokemon.Monster.HP)
+	message := fmt.Sprintf("\n %s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", currentUser.ActivePokemon.Monster.Name, currentUser.ActiveHP, currentUser.ActivePokemon.Monster.HP)
 	um.sendMessageToUser(currentUser, message)
 }
 
@@ -175,39 +176,38 @@ func (um *UserManager) getOpponentPokemons(currentUser *User) []string {
 }
 
 func (um *UserManager) PerformBattle(moveType string) {
-	for {
-		currentUser := um.Users[um.CurrentTurn]
-		opponent := um.getOpponent(currentUser.Username)
-		// Verify that the move type is valid (either "normal attack" or "special attack")
-		if moveType != "normal" && moveType != "special" {
-			um.sendMessageToUser(currentUser, fmt.Sprintf("Invalid move type: %s", moveType))
-			return
-		}
-		if moveType == "quit" {
-			um.announceWinner(opponent.Username)
-			return
-		}
-		// Select a random move of the chosen type
-		choosenMove := um.selectRandomMove(currentUser, moveType)
-
-		// Calculate and apply the damage
-		um.calculateAndApplyDamage(currentUser, opponent, choosenMove)
-
-		// Check if the opponent's active Pokemon is knocked out
-		if opponent.ActiveHP <= 0 {
-			if um.hasLost(opponent) {
-				um.announceWinner(currentUser.Username)
-				return
-			}
-			um.replaceKnockedOutPokemon(opponent)
-		}
-
-		// Switch the turn to the other player
-		um.switchTurn()
-		message := fmt.Sprintf("%s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", currentUser.ActivePokemon.Monster.Name, currentUser.ActiveHP, currentUser.ActivePokemon.Monster.HP)
-		um.sendMessageToUser(currentUser, message)
-		break
+	currentUser := um.Users[um.CurrentTurn]
+	opponent := um.getOpponent(currentUser.Username)
+	//message := fmt.Sprintf("\n %s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", currentUser.ActivePokemon.Monster.Name, currentUser.ActiveHP, currentUser.ActivePokemon.Monster.HP)
+	//um.sendMessageToUser(currentUser, message)
+	// Verify that the move type is valid (either "normal attack" or "special attack")
+	if moveType != "normal" && moveType != "special" {
+		um.sendMessageToUser(currentUser, fmt.Sprintf("Invalid move type: %s", moveType))
+		return
 	}
+	if moveType == "quit" {
+		um.announceWinner(opponent.Username)
+		return
+	}
+	// Select a random move of the chosen type
+	choosenMove := um.selectRandomMove(currentUser, moveType)
+
+	// Calculate and apply the damage
+	um.calculateAndApplyDamage(currentUser, opponent, choosenMove)
+
+	// Check if the opponent's active Pokemon is knocked out
+	if opponent.ActiveHP <= 0 {
+		if um.hasLost(opponent) {
+			um.announceWinner(currentUser.Username)
+			return
+		}
+		um.replaceKnockedOutPokemon(opponent)
+	}
+
+	// Switch the turn to the other player
+	um.switchTurn()
+	message := fmt.Sprintf("\n %s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", opponent.ActivePokemon.Monster.Name, opponent.ActiveHP, opponent.ActivePokemon.Monster.HP)
+	um.sendMessageToUser(opponent, message)
 }
 
 func (um *UserManager) selectRandomMove(user *User, moveType string) string {
@@ -256,9 +256,9 @@ func (um *UserManager) calculateAndApplyDamage(currentUser, defender *User, move
 	// Calculate the damage based on the move type
 	var damage int
 	if attackingMove.TypeName == "normal" {
-		damage = currentUser.ActivePokemon.Monster.Attack - defender.ActivePokemon.Monster.Defense
+		damage = int(math.Abs(float64(currentUser.ActivePokemon.Monster.Attack - defender.ActivePokemon.Monster.Defense)))
 	} else {
-		damage = currentUser.ActivePokemon.Monster.SpAtk - defender.ActivePokemon.Monster.SpDef
+		damage = int(math.Abs(float64(currentUser.ActivePokemon.Monster.SpAtk - defender.ActivePokemon.Monster.SpDef)))
 	}
 
 	// Apply the damage to the defender's HP
@@ -301,7 +301,7 @@ func (um *UserManager) replaceKnockedOutPokemon(user *User) {
 	// Select the next available Pokemon
 	var nextPokemonIndex int
 	for i, _ := range user.Pokemons {
-		if i != knockedOutIndex {
+		if i > knockedOutIndex && knockedOutIndex != 2 {
 			nextPokemonIndex = i
 			break
 		}
@@ -310,14 +310,13 @@ func (um *UserManager) replaceKnockedOutPokemon(user *User) {
 	// Update the user's active Pokemon and HP
 	user.ActivePokemon = user.PokemonData[nextPokemonIndex]
 	user.ActiveHP = user.ActivePokemon.Monster.HP
-
+	// Check if the user has no more Pokemon left
+	if knockedOutIndex == 2 {
+		um.announceWinner(um.getOpponent(user.Username).Username)
+	}
 	// Send a message to the user about the Pokemon change
 	um.sendMessageToUser(user, fmt.Sprintf("%s's %s has been knocked out. %s's new active Pokemon is %s.", user.Username, user.Pokemons[knockedOutIndex], user.Username, user.Pokemons[nextPokemonIndex]))
 
-	// Check if the user has no more Pokemon left
-	if len(user.Pokemons) == 0 {
-		um.announceWinner(um.getOpponent(user.Username).Username)
-	}
 }
 
 func (um *UserManager) switchTurn() {
