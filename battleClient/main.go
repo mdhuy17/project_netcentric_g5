@@ -78,7 +78,7 @@ func readAndSendBattle(conn net.Conn, username string) {
 	for {
 		//fmt.Printf("Choose your next move (type in 'normal' or 'special'): ")
 		text, _ := reader.ReadString('\n')
-		text = fmt.Sprintf("%s a a a", strings.TrimSpace(text))
+		text = fmt.Sprintf("%s %s a a",username, strings.TrimSpace(text))
 		// Send the message to the server
 		_, err := conn.Write([]byte(text))
 		if err != nil {

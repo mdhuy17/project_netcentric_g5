@@ -175,11 +175,16 @@ func (um *UserManager) getOpponentPokemons(currentUser *User) []string {
 	return nil
 }
 
-func (um *UserManager) PerformBattle(moveType string) {
+func (um *UserManager) PerformBattle(moveType string, username string) {
 	currentUser := um.Users[um.CurrentTurn]
 	opponent := um.getOpponent(currentUser.Username)
 	//message := fmt.Sprintf("\n %s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", currentUser.ActivePokemon.Monster.Name, currentUser.ActiveHP, currentUser.ActivePokemon.Monster.HP)
 	//um.sendMessageToUser(currentUser, message)
+
+	if username != currentUser.Username {
+		return
+	}
+
 	// Verify that the move type is valid (either "normal attack" or "special attack")
 	if moveType != "normal" && moveType != "special" && moveType != "quit" {
 		um.sendMessageToUser(currentUser, fmt.Sprintf("Invalid move type: %s", moveType))

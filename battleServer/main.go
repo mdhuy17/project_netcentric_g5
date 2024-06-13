@@ -80,9 +80,10 @@ func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 			}
 		case 4:
 			if userManager.AllPokemonsProvided() {
-				moveType := parts[0]
+				moveType := parts[1]
+				username := parts[0]
 				// Process the move information and send the result back to the clients
-				userManager.PerformBattle(moveType)
+				userManager.PerformBattle(moveType,username)
 			}
 		}
 	}
