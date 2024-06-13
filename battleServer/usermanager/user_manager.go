@@ -181,7 +181,7 @@ func (um *UserManager) PerformBattle(moveType string) {
 	//message := fmt.Sprintf("\n %s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", currentUser.ActivePokemon.Monster.Name, currentUser.ActiveHP, currentUser.ActivePokemon.Monster.HP)
 	//um.sendMessageToUser(currentUser, message)
 	// Verify that the move type is valid (either "normal attack" or "special attack")
-	if moveType != "normal" && moveType != "special" {
+	if moveType != "normal" && moveType != "special" && moveType != "quit" {
 		um.sendMessageToUser(currentUser, fmt.Sprintf("Invalid move type: %s", moveType))
 		return
 	}
@@ -206,7 +206,7 @@ func (um *UserManager) PerformBattle(moveType string) {
 
 	// Switch the turn to the other player
 	um.switchTurn()
-	message := fmt.Sprintf("\n %s is at %d/%d HP. Choose your next move (type in 'normal' or 'special'): ", opponent.ActivePokemon.Monster.Name, opponent.ActiveHP, opponent.ActivePokemon.Monster.HP)
+	message := fmt.Sprintf("\n %s is at %d/%d HP. Choose your next move (type in 'normal' or 'special' or 'quit'): ", opponent.ActivePokemon.Monster.Name, opponent.ActiveHP, opponent.ActivePokemon.Monster.HP)
 	um.sendMessageToUser(opponent, message)
 }
 
@@ -331,7 +331,10 @@ func (um *UserManager) switchTurn() {
 }
 
 func (um *UserManager) hasLost(user *User) bool {
-	return len(user.Pokemons) == 0
+	if user.ActiveHP == 0 && user.ActivePokemon == user.PokemonData[2] {
+		return true
+	}
+	return false
 }
 
 func (um *UserManager) announceWinner(winner string) {

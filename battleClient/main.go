@@ -42,7 +42,6 @@ func startTCPClient() {
 	// Read user battle inputs and send it to server
 	readAndSendBattle(conn, username)
 
-	fmt.Println("Thank you for playing")
 }
 
 func getUsernameFromInput() string {
@@ -71,29 +70,11 @@ func readAndSendPokemons(conn net.Conn, username string) {
 			return
 		}
 	}
-	// Wait for the server's response before exiting
-	for {
-		//start := time.Now()
-		buf := make([]byte, 1024)
-		n, err := conn.Read(buf)
-		if err != nil {
-			fmt.Println("Error reading from connection:", err)
-			return
-		}
-
-		response := strings.TrimSpace(string(buf[:n]))
-		fmt.Println(response)
-
-		// Check if the server has sent the final message
-		if strings.Contains(response, "Battle Commence") {
-			return
-		}
-	}
 }
 
 func readAndSendBattle(conn net.Conn, username string) {
 	reader := bufio.NewReader(os.Stdin)
-	buf := make([]byte, 1024)
+	//buf := make([]byte, 1024)
 	for {
 		//fmt.Printf("Choose your next move (type in 'normal' or 'special'): ")
 		text, _ := reader.ReadString('\n')
@@ -103,18 +84,6 @@ func readAndSendBattle(conn net.Conn, username string) {
 		if err != nil {
 			fmt.Println("Error writing to connection:", err)
 			return
-		}
-		// read from server
-		n, err := conn.Read(buf)
-		if err != nil {
-			fmt.Println("Error reading from connection:", err)
-			return
-		}
-		response := strings.TrimSpace(string(buf[:n]))
-		fmt.Println(response)
-		// Check if the server has sent the final message
-		if strings.Contains(response, "The winner") {
-			break
 		}
 	}
 }
@@ -129,7 +98,8 @@ func readResponsesFromServer(conn net.Conn) {
 		response := strings.TrimSpace(string(buf[:n]))
 		fmt.Println(response)
 		if strings.Contains(response, "The winner is") {
-			break
+			fmt.Println("Thank you for playing")
+			os.Exit(0)
 		}
 	}
 }
