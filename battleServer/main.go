@@ -56,10 +56,10 @@ func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 
 		switch len(parts) {
 		case 1:
-			// New client connection
+			// New pokeDexClient connection
 			username := parts[0]
 			user := userManager.AddUser(username, conn)
-			fmt.Printf("New client connected: %s\n", user.Username)
+			fmt.Printf("New pokeDexClient connected: %s\n", user.Username)
 		case 3:
 			// Received Pokemon information
 			username := parts[0]
@@ -83,7 +83,7 @@ func handleConnection(conn net.Conn, userManager *usermanager.UserManager) {
 				moveType := parts[1]
 				username := parts[0]
 				// Process the move information and send the result back to the clients
-				userManager.PerformBattle(moveType,username)
+				userManager.PerformBattle(moveType, username)
 			}
 		}
 	}

@@ -34,7 +34,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		return
 	}
 
-	// Send the file content to the client
+	// Send the file content to the pokeDexClient
 	_, err = conn.Write(fileContent)
 	if err != nil {
 		log.Println("Error writing to connection:", err)
